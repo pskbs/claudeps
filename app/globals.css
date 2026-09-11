@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 112.5%; /* 기본 16px -> 18px, 전체 글씨를 조금 더 크게 */
+}
+
+body {
+  background: linear-gradient(180deg, #fff8ec 0%, #ffede1 100%);
+  min-height: 100vh;
+}
