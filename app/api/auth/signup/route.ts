@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
   if (!username || typeof username !== "string" || username.trim().length < 2) {
     return NextResponse.json({ error: "아이디를 2자 이상 입력해주세요." }, { status: 400 });
   }
-  if (!password || typeof password !== "string" || password.length < 4) {
-    return NextResponse.json({ error: "비밀번호를 4자 이상 입력해주세요." }, { status: 400 });
+  if (!password || typeof password !== "string" || password.length < 6) {
+    return NextResponse.json({ error: "비밀번호를 6자 이상 입력해주세요." }, { status: 400 });
   }
   const year = Number(birthYear);
   const expectancy = Number(lifeExpectancy);
@@ -44,9 +44,21 @@ export async function POST(req: NextRequest) {
   });
 
   if (error || !data.user) {
+    console.error("[signup] supabase.auth.signUp failed:", error?.message);
     return NextResponse.json(
       { error: "이미 사용 중인 아이디이거나 회원가입에 실패했어요." },
       { status: 409 }
+    );
+  }
+
+  if (!data.session) {
+    console.error(
+      "[signup] signUp succeeded but no session was returned — Supabase Auth의 " +
+        "'Confirm email' 설정이 켜져 있을 가능성이 높습니다."
+    );
+    return NextResponse.json(
+      { error: "회원가입 설정이 완료되지 않았어요. 잠시 후 다시 시도해주세요." },
+      { status: 500 }
     );
   }
 
@@ -61,6 +73,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (profileError) {
+    console.error("[signup] profile insert failed:", profileError);
     return NextResponse.json({ error: "프로필 저장에 실패했어요." }, { status: 500 });
   }
 
