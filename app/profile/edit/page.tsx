@@ -4,8 +4,8 @@ import Card from "@/components/Card";
 import Mascot from "@/components/Mascot";
 import ProfileEditForm from "@/components/ProfileEditForm";
 
-export default function ProfileEditPage() {
-  const user = getCurrentUser();
+export default async function ProfileEditPage() {
+  const user = await getCurrentUser();
   if (!user) return null;
 
   return (

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
-import { addUser, getUserByUsername } from "@/lib/storage";
-import { setSession } from "@/lib/auth";
-import type { User } from "@/lib/types";
+import { usernameToAuthEmail } from "@/lib/auth";
+import { createProfile, isUsernameTaken } from "@/lib/storage";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -32,31 +30,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "몇 살까지 여행하고 싶은지 확인해주세요." }, { status: 400 });
   }
 
-  if (getUserByUsername(username.trim())) {
+  const trimmedUsername = username.trim();
+
+  if (await isUsernameTaken(trimmedUsername)) {
     return NextResponse.json({ error: "이미 사용 중인 아이디예요." }, { status: 409 });
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signUp({
+    email: usernameToAuthEmail(trimmedUsername),
+    password,
+    options: { data: { username: trimmedUsername } },
+  });
 
-  const user: User = {
-    id: uuidv4(),
-    username: username.trim(),
-    passwordHash,
+  if (error || !data.user) {
+    return NextResponse.json(
+      { error: "이미 사용 중인 아이디이거나 회원가입에 실패했어요." },
+      { status: 409 }
+    );
+  }
+
+  const { error: profileError } = await createProfile({
+    id: data.user.id,
+    username: trimmedUsername,
     birthYear: year,
     birthMonth: birthMonth ? Number(birthMonth) : undefined,
     birthDay: birthDay ? Number(birthDay) : undefined,
     birthHour: birthHour !== undefined && birthHour !== "" ? Number(birthHour) : undefined,
     lifeExpectancy: expectancy,
-    notification: {
-      morningTime: "09:00",
-      eveningTime: "21:00",
-      eveningLabel: "오늘 하루 마무리",
-    },
-    createdAt: new Date().toISOString(),
-  };
+  });
 
-  addUser(user);
-  setSession(user.id);
+  if (profileError) {
+    return NextResponse.json({ error: "프로필 저장에 실패했어요." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

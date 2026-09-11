@@ -7,7 +7,6 @@ export interface NotificationSettings {
 export interface User {
   id: string;
   username: string;
-  passwordHash: string;
   birthYear: number;
   birthMonth?: number;
   birthDay?: number;
@@ -27,5 +26,3 @@ export interface Entry {
   is_shared: boolean; // 향후 익명 SNS 공유 확장 대비, 지금은 항상 false
   createdAt: string;
 }
-
-export type PublicUser = Omit<User, "passwordHash">;

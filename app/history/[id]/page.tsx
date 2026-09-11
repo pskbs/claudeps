@@ -6,11 +6,11 @@ import { pickDailyQuote } from "@/lib/quotes";
 import Card from "@/components/Card";
 import Mascot from "@/components/Mascot";
 
-export default function HistoryDetailPage({ params }: { params: { id: string } }) {
-  const user = getCurrentUser();
+export default async function HistoryDetailPage({ params }: { params: { id: string } }) {
+  const user = await getCurrentUser();
   if (!user) return null; // middleware가 처리하지만 타입 안전을 위해 방어
 
-  const entry = getEntryById(params.id);
+  const entry = await getEntryById(params.id);
   if (!entry || entry.userId !== user.id) {
     notFound();
   }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { updateUser } from "@/lib/storage";
+import { updateNotificationSettings } from "@/lib/storage";
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export async function GET() {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
@@ -27,9 +27,11 @@ export async function POST(req: NextRequest) {
     ? eveningLabel.trim().slice(0, 20)
     : user.notification.eveningLabel;
 
-  const updated = updateUser(user.id, {
-    notification: { morningTime, eveningTime, eveningLabel: label },
+  const updated = await updateNotificationSettings(user.id, {
+    morningTime,
+    eveningTime,
+    eveningLabel: label,
   });
 
-  return NextResponse.json({ ok: true, notification: updated?.notification });
+  return NextResponse.json({ ok: true, notification: updated });
 }

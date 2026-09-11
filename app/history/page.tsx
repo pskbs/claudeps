@@ -5,11 +5,11 @@ import Card from "@/components/Card";
 import Mascot from "@/components/Mascot";
 import BottomNav from "@/components/BottomNav";
 
-export default function HistoryPage() {
-  const user = getCurrentUser();
+export default async function HistoryPage() {
+  const user = await getCurrentUser();
   if (!user) return null; // middleware가 처리하지만 타입 안전을 위해 방어
 
-  const entries = getEntriesByUser(user.id);
+  const entries = await getEntriesByUser(user.id);
 
   return (
     <main className="flex flex-col gap-5 pb-24">

@@ -1,30 +1,20 @@
-import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "./supabase";
+import { getProfileById } from "./storage";
 import type { User } from "./types";
-import { getUserById } from "./storage";
 
-const SESSION_COOKIE = "vl_session";
-const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30일
+// Supabase Auth는 이메일 기반이라, 서비스의 "아이디"를 내부용 가짜 이메일로 바꿔서 사용한다.
+// Supabase 대시보드에서 Authentication > Email > "Confirm email"을 꺼둬야 정상 동작한다.
+const FAKE_EMAIL_DOMAIN = "vacationlife.local";
 
-/** 로컬 1단계용 심플 세션: 쿠키에 userId만 저장한다. */
-export function setSession(userId: string) {
-  cookies().set(SESSION_COOKIE, userId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+export function usernameToAuthEmail(username: string): string {
+  return `${username.trim().toLowerCase()}@${FAKE_EMAIL_DOMAIN}`;
 }
 
-export function clearSession() {
-  cookies().delete(SESSION_COOKIE);
-}
-
-export function getSessionUserId(): string | undefined {
-  return cookies().get(SESSION_COOKIE)?.value;
-}
-
-export function getCurrentUser(): User | undefined {
-  const userId = getSessionUserId();
-  if (!userId) return undefined;
-  return getUserById(userId);
+export async function getCurrentUser(): Promise<User | undefined> {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return undefined;
+  return getProfileById(user.id);
 }

@@ -5,8 +5,8 @@ import Mascot from "@/components/Mascot";
 import SettingsForm from "@/components/SettingsForm";
 import NotificationPermissionToggle from "@/components/NotificationPermissionToggle";
 
-export default function SettingsPage() {
-  const user = getCurrentUser();
+export default async function SettingsPage() {
+  const user = await getCurrentUser();
   if (!user) return null;
 
   return (

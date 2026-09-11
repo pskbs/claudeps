@@ -4,7 +4,7 @@ import { getSajuFortune } from "@/lib/ai";
 import { formatDate, getSajuCompleteness } from "@/lib/date-utils";
 
 export async function GET() {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }

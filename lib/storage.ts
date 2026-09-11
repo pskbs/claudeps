@@ -1,86 +1,196 @@
-import fs from "fs";
-import path from "path";
-import type { User, Entry } from "./types";
+import { createSupabaseServerClient } from "./supabase";
+import type { User, Entry, NotificationSettings } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-const ENTRIES_FILE = path.join(DATA_DIR, "entries.json");
+/**
+ * Supabase(profiles/entries 테이블) 데이터 접근 계층.
+ * 다른 코드는 이 파일의 함수만 통해서 데이터를 읽고 써야 한다.
+ */
 
-function ensureFile(filePath: string) {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, "[]", "utf-8");
-  }
+type ProfileRow = {
+  id: string;
+  username: string;
+  birth_year: number;
+  birth_month: number | null;
+  birth_day: number | null;
+  birth_hour: number | null;
+  life_expectancy: number;
+  morning_time: string;
+  evening_time: string;
+  evening_label: string;
+  created_at: string;
+};
+
+type EntryRow = {
+  id: string;
+  user_id: string;
+  date: string;
+  content: string;
+  ai_feedback: string;
+  saju_fortune: string | null;
+  is_shared: boolean;
+  created_at: string;
+};
+
+function mapProfile(row: ProfileRow): User {
+  return {
+    id: row.id,
+    username: row.username,
+    birthYear: row.birth_year,
+    birthMonth: row.birth_month ?? undefined,
+    birthDay: row.birth_day ?? undefined,
+    birthHour: row.birth_hour ?? undefined,
+    lifeExpectancy: row.life_expectancy,
+    notification: {
+      morningTime: row.morning_time,
+      eveningTime: row.evening_time,
+      eveningLabel: row.evening_label,
+    },
+    createdAt: row.created_at,
+  };
 }
 
-function readJson<T>(filePath: string): T[] {
-  ensureFile(filePath);
-  const raw = fs.readFileSync(filePath, "utf-8");
-  try {
-    return raw.trim() ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+function mapEntry(row: EntryRow): Entry {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    date: row.date,
+    content: row.content,
+    aiFeedback: row.ai_feedback,
+    sajuFortune: row.saju_fortune ?? undefined,
+    is_shared: row.is_shared,
+    createdAt: row.created_at,
+  };
 }
 
-function writeJson<T>(filePath: string, data: T[]) {
-  ensureFile(filePath);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+export async function getProfileById(id: string): Promise<User | undefined> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return undefined;
+  return mapProfile(data as ProfileRow);
 }
 
-export function getUsers(): User[] {
-  return readJson<User>(USERS_FILE);
+/** 회원가입 시 아이디 중복 여부만 안전하게 확인한다 (RLS를 우회하지 않는 RPC). */
+export async function isUsernameTaken(username: string): Promise<boolean> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("username_exists", {
+    check_username: username,
+  });
+  if (error) return false;
+  return Boolean(data);
 }
 
-export function saveUsers(users: User[]) {
-  writeJson(USERS_FILE, users);
+export async function createProfile(profile: {
+  id: string;
+  username: string;
+  birthYear: number;
+  birthMonth?: number;
+  birthDay?: number;
+  birthHour?: number;
+  lifeExpectancy: number;
+}): Promise<{ error: string | null }> {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("profiles").insert({
+    id: profile.id,
+    username: profile.username,
+    birth_year: profile.birthYear,
+    birth_month: profile.birthMonth ?? null,
+    birth_day: profile.birthDay ?? null,
+    birth_hour: profile.birthHour ?? null,
+    life_expectancy: profile.lifeExpectancy,
+  });
+  return { error: error?.message ?? null };
 }
 
-export function getUserById(id: string): User | undefined {
-  return getUsers().find((u) => u.id === id);
+export async function updateProfile(
+  id: string,
+  updates: Partial<{
+    birthMonth: number;
+    birthDay: number;
+    birthHour: number;
+    lifeExpectancy: number;
+  }>
+): Promise<User | undefined> {
+  const supabase = createSupabaseServerClient();
+  const patch: Record<string, unknown> = {};
+  if (updates.birthMonth !== undefined) patch.birth_month = updates.birthMonth;
+  if (updates.birthDay !== undefined) patch.birth_day = updates.birthDay;
+  if (updates.birthHour !== undefined) patch.birth_hour = updates.birthHour;
+  if (updates.lifeExpectancy !== undefined) patch.life_expectancy = updates.lifeExpectancy;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(patch)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error || !data) return undefined;
+  return mapProfile(data as ProfileRow);
 }
 
-export function getUserByUsername(username: string): User | undefined {
-  return getUsers().find((u) => u.username === username);
+export async function updateNotificationSettings(
+  id: string,
+  notification: NotificationSettings
+): Promise<NotificationSettings | undefined> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      morning_time: notification.morningTime,
+      evening_time: notification.eveningTime,
+      evening_label: notification.eveningLabel,
+    })
+    .eq("id", id)
+    .select("morning_time, evening_time, evening_label")
+    .single();
+  if (error || !data) return undefined;
+  return {
+    morningTime: data.morning_time,
+    eveningTime: data.evening_time,
+    eveningLabel: data.evening_label,
+  };
 }
 
-export function addUser(user: User) {
-  const users = getUsers();
-  users.push(user);
-  saveUsers(users);
+export async function getEntriesByUser(userId: string): Promise<Entry[]> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+  if (error || !data) return [];
+  return (data as EntryRow[]).map(mapEntry);
 }
 
-export function updateUser(id: string, updates: Partial<User>) {
-  const users = getUsers();
-  const idx = users.findIndex((u) => u.id === id);
-  if (idx === -1) return undefined;
-  users[idx] = { ...users[idx], ...updates };
-  saveUsers(users);
-  return users[idx];
+export async function getEntryById(id: string): Promise<Entry | undefined> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("entries")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return undefined;
+  return mapEntry(data as EntryRow);
 }
 
-export function getEntries(): Entry[] {
-  return readJson<Entry>(ENTRIES_FILE);
-}
-
-export function saveEntries(entries: Entry[]) {
-  writeJson(ENTRIES_FILE, entries);
-}
-
-export function getEntriesByUser(userId: string): Entry[] {
-  return getEntries()
-    .filter((e) => e.userId === userId)
-    .sort((a, b) => b.date.localeCompare(a.date));
-}
-
-export function getEntryById(id: string): Entry | undefined {
-  return getEntries().find((e) => e.id === id);
-}
-
-export function addEntry(entry: Entry) {
-  const entries = getEntries();
-  entries.push(entry);
-  saveEntries(entries);
+export async function addEntry(entry: {
+  userId: string;
+  date: string;
+  content: string;
+  aiFeedback: string;
+  sajuFortune?: string;
+}): Promise<{ error: string | null }> {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("entries").insert({
+    user_id: entry.userId,
+    date: entry.date,
+    content: entry.content,
+    ai_feedback: entry.aiFeedback,
+    saju_fortune: entry.sajuFortune ?? null,
+    is_shared: false,
+  });
+  return { error: error?.message ?? null };
 }

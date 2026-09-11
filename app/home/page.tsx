@@ -12,14 +12,15 @@ import LifeJourneyGauge from "@/components/LifeJourneyGauge";
 import RecordTodayButton from "@/components/RecordTodayButton";
 import BottomNav from "@/components/BottomNav";
 
-export default function HomePage() {
-  const user = getCurrentUser();
+export default async function HomePage() {
+  const user = await getCurrentUser();
   if (!user) return null; // middleware가 처리하지만 타입 안전을 위해 방어
 
   const today = formatDate();
   const daysSinceBirth = getDaysSinceBirth(user);
   const quote = pickDailyQuote(today, user.id);
-  const hasRecordedToday = getEntriesByUser(user.id).some((e) => e.date === today);
+  const entries = await getEntriesByUser(user.id);
+  const hasRecordedToday = entries.some((e) => e.date === today);
 
   return (
     <main className="flex flex-col gap-5 pb-44">

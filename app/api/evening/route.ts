@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 import { getCurrentUser } from "@/lib/auth";
 import { getEveningFeedback, getSajuFortune } from "@/lib/ai";
 import { addEntry } from "@/lib/storage";
 import { formatDate, getSajuCompleteness } from "@/lib/date-utils";
-import type { Entry } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
@@ -42,18 +40,17 @@ export async function POST(req: NextRequest) {
       : Promise.resolve(undefined),
   ]);
 
-  const entry: Entry = {
-    id: uuidv4(),
+  const { error } = await addEntry({
     userId: user.id,
     date: today,
     content: trimmed,
     aiFeedback,
     sajuFortune,
-    is_shared: false,
-    createdAt: new Date().toISOString(),
-  };
+  });
 
-  addEntry(entry);
+  if (error) {
+    return NextResponse.json({ error: "기록 저장에 실패했어요." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, aiFeedback });
 }

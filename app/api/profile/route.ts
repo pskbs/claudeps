@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { updateUser } from "@/lib/storage";
+import { updateProfile } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
@@ -46,6 +46,6 @@ export async function POST(req: NextRequest) {
     updates.lifeExpectancy = l;
   }
 
-  const updated = updateUser(user.id, updates);
-  return NextResponse.json({ ok: true, user: updated ? { ...updated, passwordHash: undefined } : null });
+  const updated = await updateProfile(user.id, updates);
+  return NextResponse.json({ ok: true, user: updated ?? null });
 }
