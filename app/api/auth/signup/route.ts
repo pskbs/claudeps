@@ -45,8 +45,9 @@ export async function POST(req: NextRequest) {
 
   if (error || !data.user) {
     console.error("[signup] supabase.auth.signUp failed:", error?.message);
+    // TODO: 원인 확인되면 아래 상세 메시지를 다시 일반 문구로 되돌릴 것.
     return NextResponse.json(
-      { error: "이미 사용 중인 아이디이거나 회원가입에 실패했어요." },
+      { error: `회원가입 실패 (디버그): ${error?.message ?? "알 수 없는 오류"}` },
       { status: 409 }
     );
   }
