@@ -30,7 +30,14 @@ export async function POST(req: NextRequest) {
 
   const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
   if (updateError) {
-    return NextResponse.json({ error: "비밀번호 변경에 실패했어요." }, { status: 500 });
+    // Supabase Auth는 새 비밀번호가 기존과 같으면 에러를 반환하는데,
+    // 이 서비스에서는 굳이 막을 이유가 없어 이 경우만 성공으로 처리한다.
+    const isSamePasswordError =
+      updateError.code === "same_password" ||
+      /different from the old password/i.test(updateError.message);
+    if (!isSamePasswordError) {
+      return NextResponse.json({ error: "비밀번호 변경에 실패했어요." }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true });

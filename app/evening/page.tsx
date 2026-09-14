@@ -14,7 +14,6 @@ export default function EveningPage() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [detail, setDetail] = useState("");
-  const [showDetail, setShowDetail] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +56,7 @@ export default function EveningPage() {
       <div className="text-center">
         <h1 className="text-xl font-bold text-coral-500">오늘 하루 마무리</h1>
         <p className="text-sm text-stone-500 mt-1">
-          오늘의 여행을 한 단어로 표현해보세요
+          오늘 여행 키워드를 남겨보세요
         </p>
       </div>
 
@@ -68,7 +67,7 @@ export default function EveningPage() {
               value={keyword}
               maxLength={KEYWORD_MAX_LEN}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="예: 벅참, 고단함, 소소한행복"
+              placeholder="예: 벅참, 스타벅스, 야근, 소나기"
               className="w-full rounded-2xl border border-peach-200 bg-cream-50 px-4 py-3 text-base text-stone-700 outline-none focus:border-coral-300 focus:ring-2 focus:ring-coral-100"
               required
               autoFocus
@@ -77,29 +76,19 @@ export default function EveningPage() {
               {keyword.length}/{KEYWORD_MAX_LEN}
             </p>
 
-            {showDetail ? (
-              <div className="flex flex-col gap-1">
-                <textarea
-                  value={detail}
-                  maxLength={DETAIL_MAX_LEN}
-                  onChange={(e) => setDetail(e.target.value)}
-                  placeholder="어떤 순간이었는지 조금 더 이야기해볼까요? (선택)"
-                  rows={3}
-                  className="w-full resize-none rounded-2xl border border-peach-200 bg-cream-50 px-4 py-3 text-sm text-stone-700 outline-none focus:border-coral-300 focus:ring-2 focus:ring-coral-100"
-                />
-                <p className="text-right text-xs text-stone-400">
-                  {detail.length}/{DETAIL_MAX_LEN}
-                </p>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowDetail(true)}
-                className="self-start text-sm text-coral-400 underline underline-offset-2"
-              >
-                + 추가로 설명 남기기 (선택)
-              </button>
-            )}
+            <div className="flex flex-col gap-1">
+              <textarea
+                value={detail}
+                maxLength={DETAIL_MAX_LEN}
+                onChange={(e) => setDetail(e.target.value)}
+                placeholder="키워드에 대해 좀 더 말씀해주시겠어요? (선택사항)"
+                rows={3}
+                className="w-full resize-none rounded-2xl border border-peach-200 bg-cream-50 px-4 py-3 text-sm text-stone-700 outline-none focus:border-coral-300 focus:ring-2 focus:ring-coral-100"
+              />
+              <p className="text-right text-xs text-stone-400">
+                {detail.length}/{DETAIL_MAX_LEN}
+              </p>
+            </div>
 
             {error && <p className="text-sm text-coral-500">{error}</p>}
             <Button type="submit" loading={loading} disabled={!keyword.trim()}>

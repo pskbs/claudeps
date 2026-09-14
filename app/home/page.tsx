@@ -4,9 +4,8 @@ import { getEntriesByUser } from "@/lib/storage";
 import { getDaysSinceBirth, formatDate } from "@/lib/date-utils";
 import { pickDailyQuote } from "@/lib/quotes";
 import Card from "@/components/Card";
+import Mascot from "@/components/Mascot";
 import SajuSection from "@/components/SajuSection";
-import LogoutButton from "@/components/LogoutButton";
-import ProfileMenu from "@/components/ProfileMenu";
 import NotificationScheduler from "@/components/NotificationScheduler";
 import LifeJourneyGauge from "@/components/LifeJourneyGauge";
 import RecordTodayButton from "@/components/RecordTodayButton";
@@ -25,13 +24,28 @@ export default async function HomePage() {
   return (
     <main className="flex flex-col gap-5 pb-44">
       <header className="flex items-center justify-between">
-        <ProfileMenu username={user.username.split("@")[0]} />
-        <div className="flex items-center gap-3">
-          <Link href="/settings" className="text-sm text-stone-400 hover:text-coral-500 underline">
-            알림 설정
-          </Link>
-          <LogoutButton />
+        <div className="flex items-center gap-2">
+          <Mascot size={44} />
+          <div>
+            <p className="text-sm text-stone-500">안녕하세요,</p>
+            <p className="font-bold text-coral-500">{user.username.split("@")[0]}님</p>
+          </div>
         </div>
+        <Link
+          href="/settings"
+          aria-label="설정"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-coral-500 shadow-soft transition hover:bg-peach-100 active:scale-95"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.09.68.31 1 .51H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
       </header>
 
       <NotificationScheduler

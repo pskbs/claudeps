@@ -6,9 +6,9 @@ import { sendNewPasswordEmail } from "@/lib/mailer";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function generatePassword(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let out = "";
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 6; i++) {
     out += chars[Math.floor(Math.random() * chars.length)];
   }
   return out;
