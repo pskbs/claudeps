@@ -25,6 +25,7 @@ type EntryRow = {
   user_id: string;
   date: string;
   content: string;
+  detail: string | null;
   ai_feedback: string;
   saju_fortune: string | null;
   is_shared: boolean;
@@ -54,7 +55,8 @@ function mapEntry(row: EntryRow): Entry {
     id: row.id,
     userId: row.user_id,
     date: row.date,
-    content: row.content,
+    keyword: row.content,
+    detail: row.detail ?? undefined,
     aiFeedback: row.ai_feedback,
     sajuFortune: row.saju_fortune ?? undefined,
     is_shared: row.is_shared,
@@ -176,10 +178,18 @@ export async function getEntryById(id: string): Promise<Entry | undefined> {
   return mapEntry(data as EntryRow);
 }
 
+/** 로그인한 본인의 계정을 완전히 삭제한다 (auth.users 삭제 → profiles/entries cascade 삭제). */
+export async function deleteOwnAccount(): Promise<{ error: string | null }> {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.rpc("delete_own_account");
+  return { error: error?.message ?? null };
+}
+
 export async function addEntry(entry: {
   userId: string;
   date: string;
-  content: string;
+  keyword: string;
+  detail?: string;
   aiFeedback: string;
   sajuFortune?: string;
 }): Promise<{ error: string | null }> {
@@ -187,7 +197,8 @@ export async function addEntry(entry: {
   const { error } = await supabase.from("entries").insert({
     user_id: entry.userId,
     date: entry.date,
-    content: entry.content,
+    content: entry.keyword,
+    detail: entry.detail ?? null,
     ai_feedback: entry.aiFeedback,
     saju_fortune: entry.sajuFortune ?? null,
     is_shared: false,

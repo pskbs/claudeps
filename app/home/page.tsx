@@ -4,9 +4,9 @@ import { getEntriesByUser } from "@/lib/storage";
 import { getDaysSinceBirth, formatDate } from "@/lib/date-utils";
 import { pickDailyQuote } from "@/lib/quotes";
 import Card from "@/components/Card";
-import Mascot from "@/components/Mascot";
 import SajuSection from "@/components/SajuSection";
 import LogoutButton from "@/components/LogoutButton";
+import ProfileMenu from "@/components/ProfileMenu";
 import NotificationScheduler from "@/components/NotificationScheduler";
 import LifeJourneyGauge from "@/components/LifeJourneyGauge";
 import RecordTodayButton from "@/components/RecordTodayButton";
@@ -25,13 +25,7 @@ export default async function HomePage() {
   return (
     <main className="flex flex-col gap-5 pb-44">
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Mascot size={44} />
-          <div>
-            <p className="text-sm text-stone-500">안녕하세요,</p>
-            <p className="font-bold text-coral-500">{user.username}님</p>
-          </div>
-        </div>
+        <ProfileMenu username={user.username.split("@")[0]} />
         <div className="flex items-center gap-3">
           <Link href="/settings" className="text-sm text-stone-400 hover:text-coral-500 underline">
             알림 설정

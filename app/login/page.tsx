@@ -28,11 +28,13 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "로그인에 실패했어요.");
+        setLoading(false);
         return;
       }
       router.push("/home");
       router.refresh();
-    } finally {
+    } catch {
+      setError("로그인 중 오류가 발생했어요. 다시 시도해주세요.");
       setLoading(false);
     }
   }
@@ -51,7 +53,9 @@ export default function LoginPage() {
       <Card className="w-full">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
-            label="아이디"
+            label="이메일"
+            type="email"
+            placeholder="example@email.com"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -64,9 +68,15 @@ export default function LoginPage() {
             required
           />
           {error && <p className="text-sm text-coral-500">{error}</p>}
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading}>
             {loading ? "로그인 중..." : "로그인"}
           </Button>
+          <Link
+            href="/login/forgot-password"
+            className="text-center text-sm text-stone-400 underline"
+          >
+            비밀번호를 잊으셨나요?
+          </Link>
         </form>
       </Card>
       <p className="text-sm text-stone-500">

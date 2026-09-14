@@ -68,6 +68,7 @@ create table public.entries (
   user_id uuid not null references auth.users(id) on delete cascade,
   date date not null,
   content text not null,
+  detail text,
   ai_feedback text not null,
   saju_fortune text,
   is_shared boolean not null default false,
@@ -75,6 +76,8 @@ create table public.entries (
   unique (user_id, date)
 );
 
+comment on column public.entries.content is '오늘 하루를 표현하는 키워드';
+comment on column public.entries.detail is '키워드에 대한 선택적 추가 설명';
 comment on column public.entries.saju_fortune is '기록 시점의 인생사주 스냅샷 (사주 정보 입력자만)';
 comment on column public.entries.is_shared is '향후 익명 공유 피드 확장용. 지금은 항상 false로만 저장';
 

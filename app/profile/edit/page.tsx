@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import Card from "@/components/Card";
 import Mascot from "@/components/Mascot";
 import ProfileEditForm from "@/components/ProfileEditForm";
+import BackButton from "@/components/BackButton";
 
 export default async function ProfileEditPage() {
   const user = await getCurrentUser();
@@ -10,6 +11,9 @@ export default async function ProfileEditPage() {
 
   return (
     <main className="flex flex-col items-center gap-6 py-4">
+      <div className="w-full">
+        <BackButton />
+      </div>
       <Mascot size={72} />
       <div className="text-center">
         <h1 className="text-xl font-bold text-coral-500">사주 정보 입력</h1>

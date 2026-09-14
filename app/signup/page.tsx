@@ -39,11 +39,13 @@ export default function SignupPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "회원가입에 실패했어요.");
+        setLoading(false);
         return;
       }
       router.push("/home");
       router.refresh();
-    } finally {
+    } catch {
+      setError("회원가입 중 오류가 발생했어요. 다시 시도해주세요.");
       setLoading(false);
     }
   }
@@ -62,7 +64,9 @@ export default function SignupPage() {
       <Card className="w-full">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
-            label="아이디"
+            label="이메일 (아이디로 사용해요)"
+            type="email"
+            placeholder="example@email.com"
             value={form.username}
             onChange={(e) => update("username", e.target.value)}
             required
@@ -123,8 +127,8 @@ export default function SignupPage() {
           </div>
 
           {error && <p className="text-sm text-coral-500">{error}</p>}
-          <Button type="submit" disabled={loading}>
-            {loading ? "가입 중..." : "여행 시작하기"}
+          <Button type="submit" loading={loading}>
+            {loading ? "여행 시작 준비 중..." : "여행 시작하기"}
           </Button>
         </form>
       </Card>

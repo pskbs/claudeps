@@ -34,7 +34,7 @@ export default async function HistoryPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-stone-400">{entry.date}</p>
-                  <p className="text-lg font-bold text-stone-700 mt-1">{entry.content}</p>
+                  <p className="text-lg font-bold text-stone-700 mt-1">#{entry.keyword}</p>
                   <p className="text-stone-600 mt-1 line-clamp-2 leading-relaxed">
                     {entry.aiFeedback}
                   </p>

@@ -10,14 +10,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const { content } = (await req.json()) ?? {};
-  const trimmed = typeof content === "string" ? content.trim() : "";
+  const { keyword, detail } = (await req.json()) ?? {};
+  const trimmedKeyword = typeof keyword === "string" ? keyword.trim() : "";
+  const trimmedDetail = typeof detail === "string" ? detail.trim() : "";
 
-  if (!trimmed) {
-    return NextResponse.json({ error: "오늘 하루를 짧게 적어주세요." }, { status: 400 });
+  if (!trimmedKeyword) {
+    return NextResponse.json({ error: "오늘을 표현하는 키워드를 적어주세요." }, { status: 400 });
   }
-  if (trimmed.length > 10) {
-    return NextResponse.json({ error: "10자 이내로 적어주세요." }, { status: 400 });
+  if (trimmedKeyword.length > 12) {
+    return NextResponse.json({ error: "키워드는 12자 이내로 적어주세요." }, { status: 400 });
+  }
+  if (trimmedDetail.length > 200) {
+    return NextResponse.json({ error: "추가 설명은 200자 이내로 적어주세요." }, { status: 400 });
   }
 
   const today = formatDate();
@@ -28,7 +32,7 @@ export async function POST(req: NextRequest) {
   });
 
   const [aiFeedback, sajuFortune] = await Promise.all([
-    getEveningFeedback(trimmed),
+    getEveningFeedback({ keyword: trimmedKeyword, detail: trimmedDetail || undefined }),
     completeness !== "none"
       ? getSajuFortune({
           birthYear: user.birthYear,
@@ -43,7 +47,8 @@ export async function POST(req: NextRequest) {
   const { error } = await addEntry({
     userId: user.id,
     date: today,
-    content: trimmed,
+    keyword: trimmedKeyword,
+    detail: trimmedDetail || undefined,
     aiFeedback,
     sajuFortune,
   });

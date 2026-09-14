@@ -2,18 +2,12 @@ import { createSupabaseServerClient } from "./supabase";
 import { getProfileById } from "./storage";
 import type { User } from "./types";
 
-// Supabase Auth는 이메일 기반이라, 서비스의 "아이디"를 내부용 가짜 이메일로 바꿔서 사용한다.
-// 아이디에 한글/특수문자가 들어가면 로컬파트가 이메일 형식으로 유효하지 않아
-// signUp이 거부되므로, 항상 유효한 ASCII만 남도록 hex로 인코딩한다.
-// ".local"은 예약된 특수 목적 도메인이라 Supabase Auth가 "invalid" 이메일로 거부하므로
-// 일반 도메인 형태(.com)를 쓴다 — 실제로 메일이 오갈 필요는 없다(Confirm email을 꺼두므로).
-// Supabase 대시보드에서 Authentication > Email > "Confirm email"을 꺼둬야 정상 동작한다.
-const FAKE_EMAIL_DOMAIN = "vacationlife-users.com";
-
-export function usernameToAuthEmail(username: string): string {
-  const normalized = username.trim().toLowerCase();
-  const hex = Buffer.from(normalized, "utf-8").toString("hex");
-  return `u${hex}@${FAKE_EMAIL_DOMAIN}`;
+// 서비스의 "아이디"는 사용자의 실제 이메일 주소다 (Supabase Auth의 email과 그대로 1:1).
+// 대소문자 차이로 다른 계정처럼 취급되지 않도록 항상 소문자로 정규화해서 저장/조회한다.
+// Supabase 대시보드에서 Authentication > Email > "Confirm email"은 꺼둔 상태를 유지한다
+// (가입 즉시 세션을 받아 바로 로그인 상태로 홈에 진입하는 흐름을 유지하기 위함).
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 export async function getCurrentUser(): Promise<User | undefined> {

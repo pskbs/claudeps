@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { usernameToAuthEmail } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/auth";
 import { createProfile, isUsernameTaken } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -15,8 +17,8 @@ export async function POST(req: NextRequest) {
     birthHour,
   } = body ?? {};
 
-  if (!username || typeof username !== "string" || username.trim().length < 2) {
-    return NextResponse.json({ error: "아이디를 2자 이상 입력해주세요." }, { status: 400 });
+  if (!username || typeof username !== "string" || !EMAIL_RE.test(username.trim())) {
+    return NextResponse.json({ error: "올바른 이메일 형식의 아이디를 입력해주세요." }, { status: 400 });
   }
   if (!password || typeof password !== "string" || password.length < 6) {
     return NextResponse.json({ error: "비밀번호를 6자 이상 입력해주세요." }, { status: 400 });
@@ -30,15 +32,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "몇 살까지 여행하고 싶은지 확인해주세요." }, { status: 400 });
   }
 
-  const trimmedUsername = username.trim();
+  const trimmedUsername = normalizeEmail(username);
 
   if (await isUsernameTaken(trimmedUsername)) {
-    return NextResponse.json({ error: "이미 사용 중인 아이디예요." }, { status: 409 });
+    return NextResponse.json({ error: "이미 사용 중인 이메일이에요." }, { status: 409 });
   }
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
-    email: usernameToAuthEmail(trimmedUsername),
+    email: trimmedUsername,
     password,
     options: { data: { username: trimmedUsername } },
   });
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (error || !data.user) {
     console.error("[signup] supabase.auth.signUp failed:", error?.message);
     return NextResponse.json(
-      { error: "이미 사용 중인 아이디이거나 회원가입에 실패했어요." },
+      { error: "이미 사용 중인 이메일이거나 회원가입에 실패했어요." },
       { status: 409 }
     );
   }

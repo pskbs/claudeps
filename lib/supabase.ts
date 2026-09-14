@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const SUPABASE_FETCH_TIMEOUT_MS = 10000;
 
@@ -50,5 +52,19 @@ export function createSupabaseServerClient() {
         }
       },
     },
+  });
+}
+
+/**
+ * 비밀번호 찾기(본인 인증 없이 새 비밀번호 발급)처럼 사용자 세션 없이
+ * Supabase Auth 관리자 권한이 필요한 작업 전용 클라이언트.
+ * SUPABASE_SERVICE_ROLE_KEY는 서버에서만 쓰고 절대 클라이언트로 내려보내면 안 된다.
+ * 이 키가 설정되지 않았으면 undefined를 반환한다.
+ */
+export function createSupabaseAdminClient() {
+  if (!SUPABASE_SERVICE_ROLE_KEY) return undefined;
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    global: { fetch: fetchWithTimeout },
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 }

@@ -114,15 +114,28 @@ ${parts.join("\n")}
 - 사람: 편안한 사람과의 대화`;
 }
 
-export async function getEveningFeedback(content: string): Promise<string> {
-  const prompt = `너는 따뜻하고 다정한 친구 같은 캐릭터야.
-사용자가 오늘 하루를 아주 짧게 요약해서 보내줄 거야.
-그 내용을 보고 "위로", "응원", "실용적인 해결책 제안" 중 가장 어울리는 걸 골라서
-2~3줄 정도의 짧고 따뜻한 피드백을 해줘. 설명이나 서론 없이 피드백 본문만 출력해줘.
+export async function getEveningFeedback(params: {
+  keyword: string;
+  detail?: string;
+}): Promise<string> {
+  const { keyword, detail } = params;
 
-오늘 하루 요약: "${content}"`;
+  const prompt = `너는 따뜻하고 다정한 친구 같은 캐릭터야.
+사용자가 오늘 하루를 "키워드 한 단어"로 표현하고, 선택적으로 짧은 추가 설명을 남길 거야.
+이걸 보고 "아, 내 얘기를 진짜 알아듣고 하는 말이구나"라는 느낌이 들 정도로,
+키워드(그리고 추가 설명이 있다면 그 내용까지) 안에 담긴 감정과 상황을 구체적으로 짚어서
+공감해주는 2~3줄짜리 짧고 따뜻한 피드백을 써줘.
+
+규칙:
+- 키워드와 추가 설명에 나온 단어나 상황을 자연스럽게 한 번은 언급해서, 뻔한 위로가 아니라 이 사람만을 위한 말처럼 느껴지게 해줘.
+- "위로", "응원", "실용적인 조언" 중 상황에 가장 어울리는 톤을 골라줘.
+- 추가 설명이 없으면 키워드 자체의 뉘앙스(글자에서 느껴지는 감정)에 집중해서 공감해줘.
+- 설명이나 서론, 따옴표 없이 피드백 본문만 출력해줘. 이모지는 0~1개만 자연스럽게.
+
+오늘의 키워드: "${keyword}"
+${detail ? `추가 설명: "${detail}"` : "(추가 설명 없음)"}`;
 
   const result = await callClaudeCLI(prompt);
   if (result.ok) return result.text;
-  return "오늘 하루도 정말 애썼어요. 무슨 일이 있었든, 여기까지 온 당신을 꼭 안아주고 싶어요. 🤍";
+  return `"${keyword}"라는 한마디에 오늘 하루가 다 담겨 있는 것 같아요. 무슨 일이 있었든, 여기까지 온 당신을 꼭 안아주고 싶어요. 🤍`;
 }

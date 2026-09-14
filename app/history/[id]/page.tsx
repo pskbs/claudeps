@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getEntryById } from "@/lib/storage";
 import { pickDailyQuote } from "@/lib/quotes";
 import Card from "@/components/Card";
 import Mascot from "@/components/Mascot";
+import BackButton from "@/components/BackButton";
 
 export default async function HistoryDetailPage({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -19,6 +19,7 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
 
   return (
     <main className="flex flex-col gap-5 py-4">
+      <BackButton fallbackHref="/history" />
       <header className="flex items-center gap-2">
         <Mascot size={40} mood="happy" />
         <div>
@@ -42,8 +43,13 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
       </Card>
 
       <Card>
-        <p className="text-sm font-bold text-stone-400 mb-2">내 하루 기록</p>
-        <p className="text-xl font-bold text-stone-700">{entry.content}</p>
+        <p className="text-sm font-bold text-stone-400 mb-2">내 하루 키워드</p>
+        <p className="text-xl font-bold text-stone-700">#{entry.keyword}</p>
+        {entry.detail && (
+          <p className="text-stone-600 mt-2 leading-relaxed whitespace-pre-line">
+            {entry.detail}
+          </p>
+        )}
         <div className="mt-3 pt-3 border-t border-peach-100">
           <p className="text-sm font-bold text-stone-400 mb-1">AI의 한마디</p>
           <p className="text-stone-600 leading-relaxed whitespace-pre-line">
@@ -51,10 +57,6 @@ export default async function HistoryDetailPage({ params }: { params: { id: stri
           </p>
         </div>
       </Card>
-
-      <Link href="/history" className="text-sm text-stone-400 underline text-center">
-        지난 여행 목록으로
-      </Link>
     </main>
   );
 }
