@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
 import Input from "@/components/Input";
@@ -9,7 +8,6 @@ import Button from "@/components/Button";
 import Mascot from "@/components/Mascot";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -42,8 +40,7 @@ export default function SignupPage() {
         setLoading(false);
         return;
       }
-      router.push("/home");
-      router.refresh();
+      window.location.href = "/home";
     } catch {
       setError("회원가입 중 오류가 발생했어요. 다시 시도해주세요.");
       setLoading(false);

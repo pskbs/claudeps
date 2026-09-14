@@ -1,73 +1,46 @@
-import { spawn } from "child_process";
+import Anthropic from "@anthropic-ai/sdk";
 
 /**
- * 로컬 1단계: Anthropic API 키 없이, 로컬에 설치된 Claude Code CLI(`claude -p`)를
- * child_process로 호출해 텍스트 응답을 받는다.
- * 추후 Anthropic API 키를 발급받으면 이 파일의 구현만 SDK 호출로 교체하면 된다.
+ * Anthropic API(ANTHROPIC_API_KEY)로 짧은 텍스트를 생성한다.
+ * 배포 환경(Vercel 서버리스)에는 로컬 Claude Code CLI가 없어서 child_process 호출은
+ * 항상 실패하고 매번 동일한 fallback 문구만 보였다 — 그래서 이 파일을 API 호출로 교체했다.
+ * getSajuFortune / getEveningFeedback의 시그니처는 그대로 유지한다.
  */
 
-const DEFAULT_TIMEOUT_MS = 20000;
+const MODEL = "claude-opus-5";
 
-export type AiResult =
-  | { ok: true; text: string }
-  | { ok: false; error: string };
+let cachedClient: Anthropic | undefined;
 
-export function callClaudeCLI(
-  prompt: string,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
-): Promise<AiResult> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (result: AiResult) => {
-      if (settled) return;
-      settled = true;
-      resolve(result);
-    };
+function getClient(): Anthropic | undefined {
+  if (!process.env.ANTHROPIC_API_KEY) return undefined;
+  if (!cachedClient) cachedClient = new Anthropic();
+  return cachedClient;
+}
 
-    let child;
-    try {
-      child = spawn("claude", ["-p"], {
-        shell: true,
-        timeout: timeoutMs,
-        killSignal: "SIGKILL",
-      });
-    } catch (err) {
-      finish({ ok: false, error: `claude CLI 실행 실패: ${String(err)}` });
-      return;
+async function askClaude(prompt: string): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const client = getClient();
+  if (!client) {
+    return { ok: false, error: "ANTHROPIC_API_KEY가 설정되지 않았어요." };
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      output_config: { effort: "low" },
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const textBlock = response.content.find(
+      (block): block is Anthropic.TextBlock => block.type === "text"
+    );
+    if (!textBlock || !textBlock.text.trim()) {
+      return { ok: false, error: "빈 응답을 받았어요." };
     }
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout?.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    child.stderr?.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("error", (err) => {
-      finish({ ok: false, error: `claude CLI 실행 오류: ${err.message}` });
-    });
-
-    child.on("close", (code) => {
-      if (code === 0 && stdout.trim()) {
-        finish({ ok: true, text: stdout.trim() });
-      } else {
-        finish({
-          ok: false,
-          error: stderr.trim() || `claude CLI가 코드 ${code}로 종료됨`,
-        });
-      }
-    });
-
-    try {
-      child.stdin?.write(prompt);
-      child.stdin?.end();
-    } catch (err) {
-      finish({ ok: false, error: `프롬프트 전달 실패: ${String(err)}` });
-    }
-  });
+    return { ok: true, text: textBlock.text.trim() };
+  } catch (err) {
+    return { ok: false, error: `Claude API 호출 실패: ${String(err)}` };
+  }
 }
 
 export async function getSajuFortune(params: {
@@ -88,6 +61,8 @@ export async function getSajuFortune(params: {
 사용자의 오늘 하루를 "여행"에 비유해서 아래 형식을 그대로 채워줘.
 라벨과 이모지는 그대로 유지하고, 각 항목은 실제 여행 중 마주칠 법한 구체적인 행동/사람/상황으로 15자 내외로 짧게 써줘.
 "기운", "운세 흐름" 같은 추상적인 표현은 쓰지 말고, 오늘 하루를 여행하듯 살아갈 때 실용적인 조언이 되도록 써줘.
+매번 다른 표현을 써야 해 — 뻔하거나 이전에 흔히 쓰였을 법한 문구("서두르지 마세요", "여유를 가지세요" 류)는 피하고,
+오늘 날짜와 생년월일 조합에서만 나올 법한 참신하고 구체적인 이미지를 골라줘.
 정보가 부족하면 있는 정보만으로 일반적인 오늘의 조언을 채워줘. 너무 무겁거나 부정적인 표현은 피해줘.
 아래 형식 그대로, 설명이나 서론 없이 결과만 출력해줘.
 
@@ -103,7 +78,7 @@ export async function getSajuFortune(params: {
 ${parts.join("\n")}
 오늘 날짜: ${today}`;
 
-  const result = await callClaudeCLI(prompt);
+  const result = await askClaude(prompt);
   if (result.ok) return result.text;
   return `🚧 오늘 조심할 것
 - 행동: 너무 서두르는 것
@@ -130,12 +105,14 @@ export async function getEveningFeedback(params: {
 - 키워드와 추가 설명에 나온 단어나 상황을 자연스럽게 한 번은 언급해서, 뻔한 위로가 아니라 이 사람만을 위한 말처럼 느껴지게 해줘.
 - "위로", "응원", "실용적인 조언" 중 상황에 가장 어울리는 톤을 골라줘.
 - 추가 설명이 없으면 키워드 자체의 뉘앙스(글자에서 느껴지는 감정)에 집중해서 공감해줘.
+- 같은 키워드라도 매번 다른 표현과 각도로 써줘 — 정해진 틀에 단어만 바꿔 끼우지 말고,
+  이번 키워드/설명만 보고 떠오른 새로운 문장을 만들어줘.
 - 설명이나 서론, 따옴표 없이 피드백 본문만 출력해줘. 이모지는 0~1개만 자연스럽게.
 
 오늘의 키워드: "${keyword}"
 ${detail ? `추가 설명: "${detail}"` : "(추가 설명 없음)"}`;
 
-  const result = await callClaudeCLI(prompt);
+  const result = await askClaude(prompt);
   if (result.ok) return result.text;
   return `"${keyword}"라는 한마디에 오늘 하루가 다 담겨 있는 것 같아요. 무슨 일이 있었든, 여기까지 온 당신을 꼭 안아주고 싶어요. 🤍`;
 }

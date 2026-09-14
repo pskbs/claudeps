@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
 import Input from "@/components/Input";
@@ -9,7 +8,6 @@ import Button from "@/components/Button";
 import Mascot from "@/components/Mascot";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +29,10 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      router.push("/home");
-      router.refresh();
+      // router.push + refresh는 클라이언트 라우터 캐시/미들웨어 타이밍에 따라
+      // 가끔 홈으로 넘어가지 않고 로딩만 계속되는 문제가 있어, 확실하게 쿠키를
+      // 다시 읽는 전체 페이지 이동으로 처리한다.
+      window.location.href = "/home";
     } catch {
       setError("로그인 중 오류가 발생했어요. 다시 시도해주세요.");
       setLoading(false);

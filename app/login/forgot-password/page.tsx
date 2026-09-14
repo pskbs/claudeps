@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
@@ -8,15 +9,14 @@ import Mascot from "@/components/Mascot";
 import BackButton from "@/components/BackButton";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setMessage(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -27,12 +27,12 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "요청에 실패했어요.");
+        setLoading(false);
         return;
       }
-      setMessage(data.message ?? "새 비밀번호를 보내드렸어요.");
+      router.push(`/login/forgot-password/sent?email=${encodeURIComponent(data.email)}`);
     } catch {
       setError("요청 중 오류가 발생했어요. 다시 시도해주세요.");
-    } finally {
       setLoading(false);
     }
   }
@@ -61,7 +61,6 @@ export default function ForgotPasswordPage() {
             required
           />
           {error && <p className="text-sm text-coral-500">{error}</p>}
-          {message && <p className="text-sm text-stone-600">{message}</p>}
           <Button type="submit" loading={loading}>
             {loading ? "보내는 중..." : "새 비밀번호 받기"}
           </Button>

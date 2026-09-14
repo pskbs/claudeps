@@ -14,9 +14,6 @@ function generatePassword(): string {
   return out;
 }
 
-const GENERIC_MESSAGE =
-  "입력하신 이메일로 가입된 계정이 있다면, 새 비밀번호를 보내드렸어요.";
-
 export async function POST(req: NextRequest) {
   const { email } = (await req.json()) ?? {};
 
@@ -43,7 +40,10 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (profileError || !profileRow) {
-    return NextResponse.json({ ok: true, message: GENERIC_MESSAGE });
+    return NextResponse.json(
+      { error: "가입된 이메일 주소가 아니에요. 다시 확인해주세요." },
+      { status: 404 }
+    );
   }
 
   const newPassword = generatePassword();
@@ -71,5 +71,5 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, message: GENERIC_MESSAGE });
+  return NextResponse.json({ ok: true, email: normalized });
 }
