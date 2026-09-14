@@ -1,9 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "인생여행",
   description: "따뜻한 하루 기록, 인생여행",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "인생여행",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#FFDCC4",
 };
 
 export default function RootLayout({
